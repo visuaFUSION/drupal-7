@@ -8,7 +8,7 @@
 /**
  * The current system version.
  */
-define('VERSION', '7.103');
+define('VERSION', '7.2026.01');
 
 /**
  * Core API compatibility.
@@ -17,8 +17,67 @@ define('DRUPAL_CORE_COMPATIBILITY', '7.x');
 
 /**
  * Minimum supported version of PHP.
+ *
+ * This fork supports PHP 8.0, 8.1, 8.2, and 8.3.
  */
-define('DRUPAL_MINIMUM_PHP', '5.3.3');
+define('DRUPAL_MINIMUM_PHP', '8.0.0');
+
+/**
+ * @defgroup drupal_ltsr_constants Drupal 7 LTSR Constants
+ * @{
+ * Constants for Drupal 7 LTSR (Long Term Support Release).
+ *
+ * LTSR provides:
+ * - Extended Security Updates (ESU) beyond the official EOL (January 5, 2025)
+ * - PHP 8.x compatibility (8.0, 8.1, 8.2, 8.3)
+ * - Modernization improvements (UI enhancements, core module integrations)
+ * - Maintained by the community for sites requiring extended support
+ */
+
+/**
+ * Name of this Drupal distribution for display purposes.
+ */
+define('DRUPAL_FORK_NAME', 'Drupal 7 LTSR');
+
+/**
+ * URL for the fork's update server.
+ *
+ * This can be overridden in settings.php via:
+ * @code
+ * $conf['update_fetch_url'] = 'https://your-server.com/release-history';
+ * @endcode
+ *
+ * The update server should return XML in Drupal's release history format.
+ * See modules/update/UPDATE_SERVER.md for documentation.
+ */
+define('DRUPAL_FORK_UPDATE_URL', 'https://raw.githubusercontent.com/visuafusion/releases/refs/heads/main');
+
+/**
+ * URL to the fork's project page or repository.
+ */
+define('DRUPAL_FORK_PROJECT_URL', 'https://github.com/visuafusion/drupal-7');
+
+/**
+ * Whether this fork should suppress official Drupal.org EOL warnings.
+ *
+ * When TRUE, the update module will not display "unsupported" or "EOL"
+ * messages that originate from drupal.org's update servers.
+ */
+define('DRUPAL_FORK_SUPPRESS_EOL_WARNINGS', TRUE);
+
+/**
+ * URL for the fork's announcements JSON feed.
+ *
+ * This can be overridden in settings.php via:
+ * @code
+ * $conf['announcements_feed_json_url'] = 'https://your-server.com/announcements.json';
+ * @endcode
+ */
+define('DRUPAL_FORK_ANNOUNCEMENTS_URL', 'https://raw.githubusercontent.com/visuafusion/releases/refs/heads/main/drupal/announcements.json');
+
+/**
+ * @} End of "defgroup drupal_ltsr_constants".
+ */
 
 /**
  * Minimum recommended value of PHP memory_limit.
@@ -466,6 +525,18 @@ abstract class DrupalCacheArray implements ArrayAccess {
     if (!empty($data)) {
       $this->set($data);
     }
+  }
+
+  /**
+   * Prevents unserialization for security (gadget chain mitigation).
+   *
+   * @throws \Exception
+   *   Always throws an exception to prevent unserialization attacks.
+   *
+   * @see https://www.drupal.org/sa-core-2025-003
+   */
+  public function __wakeup() {
+    throw new \Exception('DrupalCacheArray cannot be unserialized for security reasons.');
   }
 }
 

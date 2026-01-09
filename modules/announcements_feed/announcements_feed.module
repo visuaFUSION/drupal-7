@@ -22,13 +22,16 @@ define('ANNOUNCEMENTS_FEED_DEFAULT_LIMIT', 10);
 
 /**
  * Default URL for the announcements JSON feed.
+ *
+ * Uses the LTSR announcements feed by default. Can be overridden in
+ * settings.php via $conf['announcements_feed_json_url'].
  */
-define('ANNOUNCEMENTS_FEED_DEFAULT_JSON_URL', 'https://www.drupal.org/announcements.json');
+define('ANNOUNCEMENTS_FEED_DEFAULT_JSON_URL', DRUPAL_FORK_ANNOUNCEMENTS_URL);
 
 /**
- * Default URL for the announcements feed at drupal.org.
+ * Default URL for the announcements page (for "View all" link).
  */
-define('ANNOUNCEMENTS_FEED_DEFAULT_LINK', 'https://www.drupal.org/about/announcements');
+define('ANNOUNCEMENTS_FEED_DEFAULT_LINK', DRUPAL_FORK_PROJECT_URL);
 
 /**
  * Implements hook_help().

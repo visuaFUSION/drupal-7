@@ -285,6 +285,19 @@ class Archive_Tar
         }
     }
 
+    /**
+     * Prevents unserialization of this class for security (gadget chain mitigation).
+     *
+     * @throws \Exception
+     *   Always throws an exception to prevent unserialization attacks.
+     *
+     * @see https://www.drupal.org/sa-core-2025-003
+     */
+    public function __wakeup()
+    {
+        throw new \Exception('Archive_Tar cannot be unserialized for security reasons.');
+    }
+
     // Drupal addition from PEAR.php.
     /**
     * OS independent PHP extension load. Remember to take care

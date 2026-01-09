@@ -2022,6 +2022,18 @@ class DatabaseTransaction {
   }
 
   /**
+   * Prevents unserialization for security (gadget chain mitigation).
+   *
+   * @throws \Exception
+   *   Always throws an exception to prevent unserialization attacks.
+   *
+   * @see https://www.drupal.org/sa-core-2025-003
+   */
+  public function __wakeup() {
+    throw new \Exception('DatabaseTransaction cannot be unserialized for security reasons.');
+  }
+
+  /**
    * Retrieves the name of the transaction or savepoint.
    */
   public function name() {

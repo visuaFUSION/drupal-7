@@ -441,8 +441,15 @@ function update_calculate_project_update_status($unused, &$project_data, $availa
   // If the project status is marked as something bad, there's nothing else
   // to consider.
   if (isset($available['project_status'])) {
+    // Check if we should suppress EOL warnings for Drupal core.
+    // This fork suppresses 'unsupported' status for core when configured to do so,
+    // allowing sites to continue receiving updates from the community fork.
+    $suppress_eol = defined('DRUPAL_FORK_SUPPRESS_EOL_WARNINGS') && DRUPAL_FORK_SUPPRESS_EOL_WARNINGS;
+    $is_core = isset($project_data['name']) && $project_data['name'] === 'drupal';
+
     switch ($available['project_status']) {
       case 'insecure':
+        // Always show security warnings - these are critical.
         $project_data['status'] = UPDATE_NOT_SECURE;
         if (empty($project_data['extra'])) {
           $project_data['extra'] = array();
@@ -455,6 +462,13 @@ function update_calculate_project_update_status($unused, &$project_data, $availa
         break;
       case 'unpublished':
       case 'revoked':
+        // For core with EOL suppression, treat 'revoked' as if we got no data
+        // (the fork provides its own releases).
+        if ($suppress_eol && $is_core) {
+          // Don't set a status - let the rest of the function handle it
+          // based on actual release data from our fork's update server.
+          break;
+        }
         $project_data['status'] = UPDATE_REVOKED;
         if (empty($project_data['extra'])) {
           $project_data['extra'] = array();
@@ -466,6 +480,13 @@ function update_calculate_project_update_status($unused, &$project_data, $availa
         );
         break;
       case 'unsupported':
+        // For core with EOL suppression, don't mark as unsupported.
+        // The fork is providing continued support.
+        if ($suppress_eol && $is_core) {
+          // Don't set a status - let the rest of the function handle it
+          // based on actual release data from our fork's update server.
+          break;
+        }
         $project_data['status'] = UPDATE_NOT_SUPPORTED;
         if (empty($project_data['extra'])) {
           $project_data['extra'] = array();
@@ -557,35 +578,51 @@ function update_calculate_project_update_status($unused, &$project_data, $availa
     $project_data['reason'] = t('No available releases found');
     return;
   }
+
+  // Re-check EOL suppression for release-level checks.
+  // These variables may have been set above, but we define them again here
+  // in case this code path is reached without going through the project_status
+  // checks (e.g., if project_status was 'published' but individual releases
+  // are marked as unsupported).
+  $suppress_eol = defined('DRUPAL_FORK_SUPPRESS_EOL_WARNINGS') && DRUPAL_FORK_SUPPRESS_EOL_WARNINGS;
+  $is_core = isset($project_data['name']) && $project_data['name'] === 'drupal';
+
   foreach ($available['releases'] as $version => $release) {
     // First, if this is the existing release, check a few conditions.
     if ($project_data['existing_version'] === $version) {
       if (isset($release['terms']['Release type']) &&
           in_array('Insecure', $release['terms']['Release type'])) {
+        // Always show security warnings.
         $project_data['status'] = UPDATE_NOT_SECURE;
       }
       elseif ($release['status'] == 'unpublished') {
-        $project_data['status'] = UPDATE_REVOKED;
-        if (empty($project_data['extra'])) {
-          $project_data['extra'] = array();
+        // For core with EOL suppression, don't mark as revoked.
+        if (!($suppress_eol && $is_core)) {
+          $project_data['status'] = UPDATE_REVOKED;
+          if (empty($project_data['extra'])) {
+            $project_data['extra'] = array();
+          }
+          $project_data['extra'][] = array(
+            'class' => array('release-revoked'),
+            'label' => t('Release revoked'),
+            'data' => t('Your currently installed release has been revoked, and is no longer available for download. Disabling everything included in this release or upgrading is strongly recommended!'),
+          );
         }
-        $project_data['extra'][] = array(
-          'class' => array('release-revoked'),
-          'label' => t('Release revoked'),
-          'data' => t('Your currently installed release has been revoked, and is no longer available for download. Disabling everything included in this release or upgrading is strongly recommended!'),
-        );
       }
       elseif (isset($release['terms']['Release type']) &&
               in_array('Unsupported', $release['terms']['Release type'])) {
-        $project_data['status'] = UPDATE_NOT_SUPPORTED;
-        if (empty($project_data['extra'])) {
-          $project_data['extra'] = array();
+        // For core with EOL suppression, don't mark as unsupported.
+        if (!($suppress_eol && $is_core)) {
+          $project_data['status'] = UPDATE_NOT_SUPPORTED;
+          if (empty($project_data['extra'])) {
+            $project_data['extra'] = array();
+          }
+          $project_data['extra'][] = array(
+            'class' => array('release-not-supported'),
+            'label' => t('Release not supported'),
+            'data' => t('Your currently installed release is now unsupported, and is no longer available for download. Disabling everything included in this release or upgrading is strongly recommended!'),
+          );
         }
-        $project_data['extra'][] = array(
-          'class' => array('release-not-supported'),
-          'label' => t('Release not supported'),
-          'data' => t('Your currently installed release is now unsupported, and is no longer available for download. Disabling everything included in this release or upgrading is strongly recommended!'),
-        );
       }
     }
 

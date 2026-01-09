@@ -347,10 +347,19 @@ abstract class Query implements QueryPlaceholderInterface {
   }
 
   /**
-   * Implements the magic __wakeup function to reconnect to the database.
+   * Prevents unserialization of query objects for security (gadget chain mitigation).
+   *
+   * Previously this method reconnected to the database, but allowing
+   * unserialization of query objects poses security risks if combined
+   * with an unserialize vulnerability.
+   *
+   * @throws \Exception
+   *   Always throws an exception to prevent unserialization attacks.
+   *
+   * @see https://www.drupal.org/sa-core-2025-003
    */
   public function __wakeup() {
-    $this->connection = Database::getConnection($this->connectionTarget, $this->connectionKey);
+    throw new \Exception('Query objects cannot be unserialized for security reasons.');
   }
 
   /**

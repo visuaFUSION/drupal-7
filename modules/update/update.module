@@ -13,8 +13,14 @@
 
 /**
  * URL to check for updates, if a given project doesn't define its own.
+ *
+ * This fork uses its own update server by default. The URL can be overridden
+ * in settings.php via $conf['update_fetch_url'].
+ *
+ * For contributed modules that specify their own 'project status url' in
+ * their .info files, those URLs will still be used.
  */
-define('UPDATE_DEFAULT_URL', 'https://updates.drupal.org/release-history');
+define('UPDATE_DEFAULT_URL', DRUPAL_FORK_UPDATE_URL);
 
 // These are internally used constants for this code, do not modify.
 
@@ -84,7 +90,7 @@ function update_help($path, $arg) {
     case 'admin/help#update':
       $output = '';
       $output .= '<h3>' . t('About') . '</h3>';
-      $output .= '<p>' . t("The Update manager module periodically checks for new versions of your site's software (including contributed modules and themes), and alerts administrators to available updates. In order to provide update information, anonymous usage statistics are sent to Drupal.org. If desired, you may disable the Update manager module from the <a href='@modules'>Module administration page</a>. For more information, see the online handbook entry for <a href='@update'>Update manager module</a>.", array('@update' => 'http://drupal.org/documentation/modules/update', '@modules' => url('admin/modules'))) . '</p>';
+      $output .= '<p>' . t("The Update manager module periodically checks for new versions of your site's software (including contributed modules and themes), and alerts administrators to available updates. This site is running @fork_name, which checks for updates from the community fork's update server. If desired, you may disable the Update manager module from the <a href='@modules'>Module administration page</a>. For more information, see the <a href='@fork_url'>@fork_name project page</a>.", array('@fork_name' => DRUPAL_FORK_NAME, '@fork_url' => DRUPAL_FORK_PROJECT_URL, '@modules' => url('admin/modules'))) . '</p>';
       // Only explain the Update manager if it has not been disabled.
       if (update_manager_access()) {
         $output .= '<p>' . t('The Update manager also allows administrators to update and install modules and themes through the administration interface.') . '</p>';
