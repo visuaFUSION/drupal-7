@@ -70,6 +70,11 @@ define('UPDATE_NOT_FETCHED', -3);
 define('UPDATE_FETCH_PENDING', -4);
 
 /**
+ * Project is not tracked by LTSR but may still work.
+ */
+define('UPDATE_NOT_TRACKED_LTSR', -5);
+
+/**
  * Maximum number of attempts to fetch available update data from a given host.
  */
 define('UPDATE_MAX_FETCH_ATTEMPTS', 2);

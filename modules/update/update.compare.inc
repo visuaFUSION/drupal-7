@@ -353,8 +353,16 @@ function update_calculate_project_data($available) {
       update_calculate_project_update_status($project, $projects[$project], $available[$project]);
     }
     else {
-      $projects[$project]['status'] = UPDATE_UNKNOWN;
-      $projects[$project]['reason'] = t('No available releases found');
+      // Project not found in LTSR release history. Mark as untracked rather
+      // than unknown to provide a more helpful message for LTSR users.
+      $projects[$project]['status'] = UPDATE_NOT_TRACKED_LTSR;
+      $projects[$project]['reason'] = t('Not tracked by LTSR');
+      $projects[$project]['extra'] = array();
+      $projects[$project]['extra'][] = array(
+        'class' => array('not-tracked-ltsr'),
+        'label' => t('Not tracked'),
+        'data' => t('This module is not currently maintained on the LTSR branch. It may still work, but your mileage may vary.'),
+      );
     }
   }
   // Give other modules a chance to alter the status (for example, to allow a
@@ -498,8 +506,22 @@ function update_calculate_project_update_status($unused, &$project_data, $availa
         );
         break;
       case 'not-fetched':
+        // Generic fetch failure - couldn't reach the update server.
         $project_data['status'] = UPDATE_NOT_FETCHED;
         $project_data['reason'] = t('Failed to get available update data.');
+        break;
+      case 'not-found':
+        // Project not in LTSR release repo (404) - show as "not tracked".
+        $project_data['status'] = UPDATE_NOT_TRACKED_LTSR;
+        $project_data['reason'] = t('Not tracked by LTSR');
+        if (empty($project_data['extra'])) {
+          $project_data['extra'] = array();
+        }
+        $project_data['extra'][] = array(
+          'class' => array('not-tracked-ltsr'),
+          'label' => t('Not tracked'),
+          'data' => t('This module is not currently maintained on the LTSR branch. It may still work, but your mileage may vary.'),
+        );
         break;
 
       default:

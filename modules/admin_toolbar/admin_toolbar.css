@@ -1,0 +1,162 @@
+/**
+ * @file
+ * Styles for Admin Toolbar dropdown menus.
+ *
+ * Uses high specificity to override toolbar.css aggressive resets.
+ */
+
+/**
+ * Dropdown container styles.
+ */
+#toolbar ul.admin-toolbar-dropdown {
+  display: none;
+  position: absolute;
+  top: 100%;
+  left: 0;
+  z-index: 700;
+  min-width: 180px;
+  max-width: 280px;
+  background: #fff !important;
+  border: 1px solid #ccc !important;
+  -moz-box-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+  -webkit-box-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+  box-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+  margin: 0;
+  padding: 5px 0 !important;
+  list-style: none !important;
+}
+
+#toolbar ul.admin-toolbar-dropdown.open {
+  display: block;
+}
+
+/**
+ * Dropdown item styles.
+ */
+#toolbar ul.admin-toolbar-dropdown li {
+  float: none !important;
+  display: block !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  border-bottom: 1px solid #eee;
+  position: relative;
+  list-style: none !important;
+}
+
+#toolbar ul.admin-toolbar-dropdown li:last-child {
+  border-bottom: none;
+}
+
+#toolbar ul.admin-toolbar-dropdown li a {
+  display: block !important;
+  float: none !important;
+  padding: 8px 12px !important;
+  color: #333 !important;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  text-decoration: none !important;
+  font-size: 12px !important;
+  line-height: 1.4 !important;
+  background: transparent !important;
+  border-radius: 0 !important;
+}
+
+#toolbar ul.admin-toolbar-dropdown li a:hover,
+#toolbar ul.admin-toolbar-dropdown li a:focus {
+  background: #e8e8e8 !important;
+  color: #000 !important;
+}
+
+/**
+ * Nested dropdowns (sub-menus).
+ */
+#toolbar .admin-toolbar-dropdown .admin-toolbar-dropdown {
+  top: 0;
+  left: 100%;
+  margin-left: -1px;
+}
+
+/**
+ * Expandable items with children.
+ */
+#toolbar .admin-toolbar-dropdown li.has-children > a {
+  padding-right: 24px;
+}
+
+#toolbar .admin-toolbar-dropdown li.has-children > a:after {
+  content: "";
+  position: absolute;
+  right: 8px;
+  top: 50%;
+  margin-top: -4px;
+  width: 0;
+  height: 0;
+  border-left: 4px solid #666;
+  border-top: 4px solid transparent;
+  border-bottom: 4px solid transparent;
+}
+
+/**
+ * Make top-level menu items relative for dropdown positioning.
+ */
+#toolbar #toolbar-menu li {
+  position: relative;
+}
+
+/**
+ * Drupal icon dropdown.
+ */
+#toolbar #toolbar-home {
+  position: relative;
+}
+
+#toolbar #admin-toolbar-drupal-menu {
+  left: 0;
+}
+
+/**
+ * RTL support.
+ */
+[dir="rtl"] #toolbar .admin-toolbar-dropdown {
+  left: auto;
+  right: 0;
+}
+
+[dir="rtl"] #toolbar .admin-toolbar-dropdown .admin-toolbar-dropdown {
+  left: auto;
+  right: 100%;
+  margin-left: 0;
+  margin-right: -1px;
+}
+
+[dir="rtl"] #toolbar .admin-toolbar-dropdown li.has-children > a {
+  padding-right: 12px;
+  padding-left: 24px;
+}
+
+[dir="rtl"] #toolbar .admin-toolbar-dropdown li.has-children > a:after {
+  right: auto;
+  left: 8px;
+  border-left: none;
+  border-right: 4px solid #666;
+}
+
+/**
+ * Loading state.
+ */
+#toolbar .admin-toolbar-dropdown.loading:before {
+  content: "";
+  display: block;
+  padding: 10px;
+  text-align: center;
+  color: #666;
+}
+
+/**
+ * Accessibility - keyboard navigation highlight.
+ */
+#toolbar .admin-toolbar-dropdown a:focus {
+  outline: 2px solid #0074bd;
+  outline-offset: -2px;
+}

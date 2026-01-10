@@ -67,6 +67,10 @@ function theme_update_report($variables) {
         $class = 'unknown';
         $icon = theme('image', array('path' => 'misc/watchdog-warning.png', 'width' => 18, 'height' => 18, 'alt' => t('warning'), 'title' => t('warning')));
         break;
+      case UPDATE_NOT_TRACKED_LTSR:
+        $class = 'warning';
+        $icon = theme('image', array('path' => 'misc/watchdog-warning.png', 'width' => 18, 'height' => 18, 'alt' => t('warning'), 'title' => t('warning')));
+        break;
       case UPDATE_NOT_SECURE:
       case UPDATE_REVOKED:
       case UPDATE_NOT_SUPPORTED:
@@ -277,6 +281,9 @@ function theme_update_status_label($variables) {
 
     case UPDATE_CURRENT:
       return '<span class="current">' . t('Up to date') . '</span>';
+
+    case UPDATE_NOT_TRACKED_LTSR:
+      return '<span class="not-tracked-ltsr">' . t('Not tracked by LTSR') . '</span>';
 
   }
 }

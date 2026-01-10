@@ -174,31 +174,34 @@ table {
   font-size: 0.857em;
   margin: 10px 0;
   width: 100%;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
 }
 table table {
   font-size: 1em;
+  box-shadow: none;
 }
 #footer-wrapper table {
   font-size: 1em;
 }
 table tr th {
-  background: #757575;
-  background: rgba(0, 0, 0, 0.51);
+  background: #4a4a4a;
   border-bottom-style: none;
 }
 table tr th,
 table tr th a,
 table tr th a:hover {
   color: #FFF;
-  font-weight: bold;
+  font-weight: 600;
 }
 table tbody tr th {
   vertical-align: top;
 }
 tr td,
 tr th {
-  padding: 4px 9px;
-  border: 1px solid #fff;
+  padding: 10px 12px;
+  border: 1px solid #e8e8e8;
   text-align: left; /* LTR */
 }
 #footer-wrapper tr td,
@@ -207,13 +210,14 @@ tr th {
   border-color: rgba(255, 255, 255, 0.18);
 }
 tr.odd {
-  background: #e4e4e4;
-  background: rgba(0, 0, 0, 0.105);
+  background: #f8f8f8;
 }
 tr,
 tr.even {
-  background: #efefef;
-  background: rgba(0, 0, 0, 0.063);
+  background: #fff;
+}
+tr:hover td {
+  background: #f0f7fc;
 }
 table ul.links {
   margin: 0;
@@ -463,48 +467,48 @@ h1#site-name {
   font-size: 0.929em;
   margin: 0;
   padding: 0 15px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px;
 }
 #main-menu-links li {
   float: left; /* LTR */
   list-style: none;
-  padding: 0 1px;
-  margin: 0 1px;
+  padding: 0;
+  margin: 0;
 }
 #main-menu-links a {
-  color: #333;
-  background: #ccc;
-  background: rgba(255, 255, 255, 0.7);
+  color: #444;
+  background: rgba(255, 255, 255, 0.75);
   float: left; /* LTR */
   height: 2.4em;
   line-height: 2.4em;
-  padding: 0 0.8em;
+  padding: 0 1em;
   text-decoration: none;
-  text-shadow: 0 1px #eee;
-  -khtml-border-radius-topleft: 8px;
-  -khtml-border-radius-topright: 8px;
-  -moz-border-radius-topleft: 8px;
-  -moz-border-radius-topright: 8px;
-  -webkit-border-top-left-radius: 8px;
-  -webkit-border-top-right-radius: 8px;
-  border-top-left-radius: 8px;
-  border-top-right-radius: 8px;
+  font-weight: 500;
+  border-top-left-radius: 4px;
+  border-top-right-radius: 4px;
+  -moz-border-radius-topleft: 4px;
+  -moz-border-radius-topright: 4px;
+  -webkit-border-top-left-radius: 4px;
+  -webkit-border-top-right-radius: 4px;
+  transition: background 0.15s ease, color 0.15s ease;
 }
 #main-menu-links a:hover,
 #main-menu-links a:focus {
-  background: #f6f6f2;
   background: rgba(255, 255, 255, 0.95);
+  color: #000;
 }
 #main-menu-links a:active {
-  background: #b3b3b3;
-  background: rgba(255, 255, 255, 1);
+  background: #fff;
 }
 #main-menu-links li a.active {
-  border-bottom: none;
+  background: #fff;
+  color: #000;
 }
 .featured #main-menu-links li a:active,
 .featured #main-menu-links li a.active {
   background: #f0f0f0;
-  background: rgba(240, 240, 240, 1.0);
 }
 
 /* --------------- Secondary Menu ------------ */
@@ -955,47 +959,53 @@ ul.links {
   margin-bottom: 20px;
 }
 .tabs ul.primary {
-  padding: 0 3px;
+  padding: 0;
   margin: 0;
   overflow: hidden;
   border: none;
-  background: transparent url(../images/tabs-border.png) repeat-x left bottom;
+  border-bottom: 2px solid #e5e5e5;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px;
 }
 .tabs ul.primary li {
   display: block;
   float: left; /* LTR */
   vertical-align: bottom;
-  margin: 0 5px 0 0; /* LTR */
+  margin: 0;
 }
 .tabs ul.primary li.active a {
-  border-bottom: 1px solid #ffffff;
+  border-bottom: 2px solid #0074bd;
+  margin-bottom: -2px;
+  color: #0074bd;
 }
 .tabs ul.primary li a {
-  color: #000;
-  background-color: #ededed;
-  height: 1.8em;
-  line-height: 1.9;
+  color: #555;
+  background-color: transparent;
+  height: auto;
+  line-height: 1.4;
   display: block;
   font-size: 0.929em;
   float: left; /* not LTR */
-  padding: 0 10px 3px;
+  padding: 10px 16px;
   margin: 0;
-  text-shadow: 0 1px 0 #fff;
-  -khtml-border-radius-topleft: 6px;
-  -moz-border-radius-topleft: 6px;
-  -webkit-border-top-left-radius: 6px;
-  border-top-left-radius: 6px;
-  -khtml-border-radius-topright: 6px;
-  -moz-border-radius-topright: 6px;
-  -webkit-border-top-right-radius: 6px;
-  border-top-right-radius: 6px;
+  transition: all 0.2s ease;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -2px;
+}
+.tabs ul.primary li a:hover,
+.tabs ul.primary li a:focus {
+  color: #0074bd;
+  background-color: rgba(0, 116, 189, 0.05);
 }
 .tabs ul.primary li.active a {
-  background-color: #ffffff;
+  background-color: transparent;
 }
 .tabs ul.secondary {
   border-bottom: none;
   padding: 0.5em 0;
+  display: flex;
+  gap: 4px;
 }
 .tabs ul.secondary li {
   display: block;
@@ -1008,15 +1018,19 @@ ul.links {
   padding-left: 0; /* LTR */
 }
 .tabs ul.secondary li a {
-  padding: 0.25em 0.5em;
+  padding: 6px 12px;
+  border-radius: 4px;
+  transition: all 0.2s ease;
+}
+.tabs ul.secondary li a:hover,
+.tabs ul.secondary li a:focus {
+  background: #e8e8e8;
 }
 .tabs ul.secondary li a.active {
-  background: #f2f2f2;
+  background: #0074bd;
+  color: #fff;
   border-bottom: none;
-  -moz-border-radius: 5px;
-  -webkit-border-radius: 5px;
-  -khtml-border-radius: 5px;
-  border-radius: 5px;
+  border-radius: 4px;
 }
 ul.action-links {
   list-style: none;
@@ -1086,47 +1100,57 @@ div.password-confirm {
 
 input.form-submit,
 a.button {
-  background: #fff url(../images/buttons.png) 0 0 repeat-x;
-  border: 1px solid #e4e4e4;
-  border-bottom: 1px solid #b4b4b4;
-  border-left-color: #d2d2d2;
-  border-right-color: #d2d2d2;
-  color: #3a3a3a;
+  background: #0074bd;
+  border: none;
+  color: #fff;
   cursor: pointer;
   font-size: 0.929em;
-  font-weight: normal;
+  font-weight: 500;
   text-align: center;
   margin-bottom: 1em;
   margin-right: 0.6em; /* LTR */
-  padding: 4px 17px;
-  -khtml-border-radius: 15px;
-  -moz-border-radius: 20px;
-  -webkit-border-radius: 15px;
-  border-radius: 15px;
+  padding: 8px 20px;
+  border-radius: 6px;
+  -moz-border-radius: 6px;
+  -webkit-border-radius: 6px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
+  transition: all 0.2s ease;
+}
+input.form-submit:hover,
+input.form-submit:focus,
+a.button:hover,
+a.button:focus {
+  background: #005a94;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.18);
+  color: #fff;
+  text-decoration: none;
+}
+input.form-submit:active,
+a.button:active {
+  background: #004a7a;
+  transform: translateY(1px);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.15);
 }
 a.button:link,
-a.button:visited,
-a.button:hover,
-a.button:focus,
-a.button:active {
+a.button:visited {
   text-decoration: none;
-  color: #5a5a5a;
+  color: #fff;
 }
 
 /* -------------- Form Elements   ------------- */
 
 fieldset {
   background: #ffffff;
-  border: 1px solid #cccccc;
+  border: 1px solid #ddd;
   margin-top: 10px;
   margin-bottom: 32px;
   padding: 0 0 10px;
   position: relative;
   top: 12px; /* Offsets the negative margin of legends */
-  -khtml-border-radius: 4px;
-  -moz-border-radius: 4px;
-  -webkit-border-radius: 4px;
-  border-radius: 4px;
+  border-radius: 8px;
+  -moz-border-radius: 8px;
+  -webkit-border-radius: 8px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
 }
 .fieldset-wrapper {
   margin-top: 25px;
@@ -1167,35 +1191,32 @@ fieldset.collapsed {
   border-radius: 0;
 }
 fieldset legend {
-  background: #dbdbdb;
-  border: 1px solid #ccc;
+  background: #f5f5f5;
+  border: 1px solid #ddd;
   border-bottom: none;
-  color: #3b3b3b;
+  color: #333;
   display: block;
   height: 2em;
   left: -1px; /* LTR */
   font-family: "Lucida Grande", "Lucida Sans Unicode", Verdana, sans-serif;
+  font-weight: 600;
   line-height: 2;
   padding: 0;
   position: absolute;
-  text-indent: 10px;
-  text-shadow: 0 1px 0 #fff;
+  text-indent: 12px;
   top: -12px;
   width: 100%;
-  -khtml-border-radius-topleft: 4px;
-  -moz-border-radius-topleft: 4px;
-  -webkit-border-top-left-radius: 4px;
-  border-top-left-radius: 4px;
-  -khtml-border-radius-topright: 4px;
-  -moz-border-radius-topright: 4px;
-  -webkit-border-top-right-radius: 4px;
-  border-top-right-radius: 4px;
+  border-top-left-radius: 8px;
+  border-top-right-radius: 8px;
+  -moz-border-radius-topleft: 8px;
+  -moz-border-radius-topright: 8px;
+  -webkit-border-top-left-radius: 8px;
+  -webkit-border-top-right-radius: 8px;
 }
 fieldset.collapsed legend {
-  -khtml-border-radius: 4px;
-  -moz-border-radius: 4px;
-  -webkit-border-radius: 4px;
-  border-radius: 4px;
+  border-radius: 8px;
+  -moz-border-radius: 8px;
+  -webkit-border-radius: 8px;
 }
 fieldset legend a {
   color: #3b3b3b;
@@ -1234,10 +1255,16 @@ input.form-text,
 textarea.form-textarea,
 select.form-select {
   border: 1px solid #ccc;
+  border-radius: 4px;
+  padding: 8px 10px;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
 }
-input.form-submit:hover,
-input.form-submit:focus {
-  background: #dedede;
+input.form-text:focus,
+textarea.form-textarea:focus,
+select.form-select:focus {
+  border-color: #0074bd;
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(0, 116, 189, 0.15);
 }
 .password-suggestions ul li {
   margin-left: 1.2em; /* LTR */

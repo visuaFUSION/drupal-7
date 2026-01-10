@@ -172,12 +172,20 @@ function _update_process_fetch_task($project) {
     }
   }
   else {
-    $available['project_status'] = 'not-fetched';
-    if (empty($fail[$fetch_url_base])) {
-      $fail[$fetch_url_base] = 1;
+    // Distinguish between "not found" (404) and other fetch failures.
+    // 404 means the project isn't in the release repo (not tracked by LTSR).
+    // Other errors mean we couldn't reach the repo at all.
+    if (isset($xml) && isset($xml->code) && $xml->code == 404) {
+      $available['project_status'] = 'not-found';
     }
     else {
-      $fail[$fetch_url_base]++;
+      $available['project_status'] = 'not-fetched';
+      if (empty($fail[$fetch_url_base])) {
+        $fail[$fetch_url_base] = 1;
+      }
+      else {
+        $fail[$fetch_url_base]++;
+      }
     }
   }
 

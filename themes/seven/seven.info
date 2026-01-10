@@ -1,7 +1,7 @@
 name = Seven
-description = A simple one-column, tableless, fluid width administration theme.
+description = A simple one-column, tableless, fluid width administration theme. Modernized for 2026.
 package = Core
-version = VERSION
+version = 7.x-2026.03
 core = 7.x
 stylesheets[screen][] = reset.css
 stylesheets[screen][] = style.css

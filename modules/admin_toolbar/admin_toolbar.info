@@ -1,0 +1,15 @@
+name = Admin Toolbar
+description = Enhances the Toolbar module with dropdown menus and quick admin links (flush cache, run cron, etc.) under the Drupal icon.
+package = Administration
+core = 7.x
+version = 7.x-2026.03
+dependencies[] = toolbar
+
+configure = admin/config/user-interface/admin-toolbar
+
+; Credits
+; -------
+; Drupal 7 LTSR port by visuaFUSION Systems Solutions
+; Based on the Admin Toolbar module for Drupal 8/9/10/11
+; Original concept and implementation: https://www.drupal.org/project/admin_toolbar
+; Maintained by Mohamed Anis Taktak (matio89) and the Admin Toolbar maintainers

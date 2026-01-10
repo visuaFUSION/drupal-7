@@ -1,0 +1,306 @@
+<?php
+
+/**
+ * @file
+ * Enhances the Toolbar module with dropdown menus and admin tools.
+ *
+ * This module adds:
+ * - Dropdown menus on hover for admin menu items
+ * - A Drupal icon dropdown with quick admin tools (flush cache, run cron, etc.)
+ *
+ * Works with any theme, including those that override toolbar.tpl.php.
+ */
+
+/**
+ * Implements hook_menu().
+ */
+function admin_toolbar_menu() {
+  $items = array();
+
+  // Configuration page.
+  $items['admin/config/user-interface/admin-toolbar'] = array(
+    'title' => 'Admin Toolbar',
+    'description' => 'Configure the Admin Toolbar dropdown menus.',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('admin_toolbar_settings_form'),
+    'access arguments' => array('administer site configuration'),
+    'file' => 'admin_toolbar.admin.inc',
+  );
+
+  // AJAX callback to get menu tree.
+  $items['admin/toolbar/menu-tree'] = array(
+    'title' => 'Menu tree',
+    'type' => MENU_CALLBACK,
+    'page callback' => 'admin_toolbar_menu_tree_json',
+    'access arguments' => array('access toolbar'),
+    'delivery callback' => 'drupal_json_output',
+  );
+
+  // Admin toolbar tools routes.
+  $items['admin/toolbar/flush'] = array(
+    'title' => 'Flush all caches',
+    'type' => MENU_CALLBACK,
+    'page callback' => 'admin_toolbar_flush_all_caches',
+    'access arguments' => array('administer site configuration'),
+  );
+  $items['admin/toolbar/flush-css-js'] = array(
+    'title' => 'Flush CSS and JavaScript',
+    'type' => MENU_CALLBACK,
+    'page callback' => 'admin_toolbar_flush_css_js',
+    'access arguments' => array('administer site configuration'),
+  );
+  $items['admin/toolbar/flush-menu'] = array(
+    'title' => 'Flush menu cache',
+    'type' => MENU_CALLBACK,
+    'page callback' => 'admin_toolbar_flush_menu',
+    'access arguments' => array('administer site configuration'),
+  );
+  $items['admin/toolbar/flush-theme'] = array(
+    'title' => 'Rebuild theme registry',
+    'type' => MENU_CALLBACK,
+    'page callback' => 'admin_toolbar_flush_theme',
+    'access arguments' => array('administer site configuration'),
+  );
+  $items['admin/toolbar/run-cron'] = array(
+    'title' => 'Run cron',
+    'type' => MENU_CALLBACK,
+    'page callback' => 'admin_toolbar_run_cron',
+    'access arguments' => array('administer site configuration'),
+  );
+
+  return $items;
+}
+
+/**
+ * Implements hook_page_build().
+ *
+ * Add admin toolbar CSS and JS when the toolbar is present.
+ */
+function admin_toolbar_page_build(&$page) {
+  if (!user_access('access toolbar')) {
+    return;
+  }
+
+  $module_path = drupal_get_path('module', 'admin_toolbar');
+
+  // Build the Drupal icon dropdown menu items (if enabled).
+  $drupal_menu = array();
+  if (variable_get('admin_toolbar_drupal_menu', TRUE)) {
+    $drupal_menu = admin_toolbar_drupal_menu();
+  }
+
+  // Get settings.
+  $depth = variable_get('admin_toolbar_depth', 4);
+  $hover_delay = variable_get('admin_toolbar_hover_delay', 200);
+
+  // Add CSS.
+  drupal_add_css($module_path . '/admin_toolbar.css');
+
+  // Add JS and settings.
+  drupal_add_js($module_path . '/admin_toolbar.js');
+  drupal_add_js(array(
+    'adminToolbar' => array(
+      'menuTreeUrl' => url('admin/toolbar/menu-tree'),
+      'depth' => $depth,
+      'hoverDelay' => $hover_delay,
+      'drupalMenu' => $drupal_menu,
+    ),
+  ), 'setting');
+}
+
+/**
+ * Returns the menu tree as JSON for AJAX requests.
+ */
+function admin_toolbar_menu_tree_json() {
+  $depth = variable_get('admin_toolbar_depth', 4);
+  $tree = admin_toolbar_get_menu_tree($depth);
+  $menu = admin_toolbar_tree_to_array($tree);
+  return $menu;
+}
+
+/**
+ * Gets the admin menu tree with multiple levels.
+ *
+ * @param int $levels
+ *   Number of levels to retrieve.
+ *
+ * @return array
+ *   The menu tree.
+ */
+function admin_toolbar_get_menu_tree($levels = 4) {
+  // Use menu_tree_all_data() to get the full tree with all children expanded.
+  // This is more expensive but necessary for dropdown menus.
+  $tree = menu_tree_all_data('management', NULL, $levels + 1);
+
+  // Find and return just the admin subtree.
+  foreach ($tree as $item) {
+    if ($item['link']['link_path'] == 'admin') {
+      return $item['below'];
+    }
+  }
+
+  return array();
+}
+
+/**
+ * Converts a menu tree to a simple array for JSON output.
+ *
+ * @param array $tree
+ *   The menu tree from menu_build_tree().
+ *
+ * @return array
+ *   Simplified array suitable for JSON.
+ */
+function admin_toolbar_tree_to_array($tree) {
+  $items = array();
+
+  foreach ($tree as $data) {
+    if (!$data['link']['hidden'] && $data['link']['access']) {
+      $item = array(
+        // Don't use check_plain() here - JSON encoding handles escaping,
+        // and jQuery's .text() will properly escape when rendering.
+        'title' => $data['link']['title'],
+        'href' => url($data['link']['href']),
+        'path' => $data['link']['href'],
+        'id' => str_replace(array('/', '<', '>'), array('-', '', ''), $data['link']['href']),
+        'description' => !empty($data['link']['description']) ? $data['link']['description'] : '',
+      );
+
+      if (!empty($data['below'])) {
+        $item['children'] = admin_toolbar_tree_to_array($data['below']);
+      }
+
+      $items[] = $item;
+    }
+  }
+
+  return $items;
+}
+
+/**
+ * Builds the Drupal icon dropdown menu items.
+ *
+ * @return array
+ *   Array of menu items for the Drupal icon dropdown.
+ */
+function admin_toolbar_drupal_menu() {
+  $items = array();
+
+  // Front page link.
+  $items[] = array(
+    'title' => t('Front page'),
+    'href' => url('<front>'),
+  );
+
+  // Index link.
+  if (user_access('access administration pages')) {
+    $items[] = array(
+      'title' => t('Index'),
+      'href' => url('admin/index'),
+    );
+  }
+
+  // Admin tools requiring site configuration access.
+  if (user_access('administer site configuration')) {
+    $destination = drupal_get_destination();
+
+    $items[] = array(
+      'title' => t('Flush all caches'),
+      'href' => url('admin/toolbar/flush', array('query' => $destination)),
+    );
+    $items[] = array(
+      'title' => t('Flush CSS/JS'),
+      'href' => url('admin/toolbar/flush-css-js', array('query' => $destination)),
+    );
+    $items[] = array(
+      'title' => t('Flush menu cache'),
+      'href' => url('admin/toolbar/flush-menu', array('query' => $destination)),
+    );
+    $items[] = array(
+      'title' => t('Rebuild theme'),
+      'href' => url('admin/toolbar/flush-theme', array('query' => $destination)),
+    );
+    $items[] = array(
+      'title' => t('Run cron'),
+      'href' => url('admin/toolbar/run-cron', array('query' => $destination)),
+    );
+  }
+
+  // Run updates link if update module is enabled.
+  if (module_exists('update') && user_access('administer software updates')) {
+    $items[] = array(
+      'title' => t('Run updates'),
+      'href' => base_path() . 'update.php',
+    );
+  }
+
+  return $items;
+}
+
+/**
+ * Menu callback; flushes all caches.
+ */
+function admin_toolbar_flush_all_caches() {
+  drupal_flush_all_caches();
+  drupal_set_message(t('All caches cleared.'));
+  drupal_goto();
+}
+
+/**
+ * Menu callback; flushes CSS and JavaScript caches.
+ */
+function admin_toolbar_flush_css_js() {
+  _drupal_flush_css_js();
+  drupal_clear_css_cache();
+  drupal_clear_js_cache();
+  drupal_set_message(t('CSS and JavaScript cache cleared.'));
+  drupal_goto();
+}
+
+/**
+ * Menu callback; flushes menu cache.
+ */
+function admin_toolbar_flush_menu() {
+  menu_rebuild();
+  drupal_set_message(t('Menu cache cleared.'));
+  drupal_goto();
+}
+
+/**
+ * Menu callback; rebuilds theme registry.
+ */
+function admin_toolbar_flush_theme() {
+  drupal_theme_rebuild();
+  drupal_set_message(t('Theme registry rebuilt.'));
+  drupal_goto();
+}
+
+/**
+ * Menu callback; runs cron manually.
+ */
+function admin_toolbar_run_cron() {
+  if (drupal_cron_run()) {
+    drupal_set_message(t('Cron ran successfully.'));
+  }
+  else {
+    drupal_set_message(t('Cron run failed.'), 'error');
+  }
+  drupal_goto();
+}
+
+/**
+ * Implements hook_help().
+ */
+function admin_toolbar_help($path, $arg) {
+  switch ($path) {
+    case 'admin/help#admin_toolbar':
+      $output = '<h3>' . t('About') . '</h3>';
+      $output .= '<p>' . t('The Admin Toolbar module enhances the core Toolbar module by adding:') . '</p>';
+      $output .= '<ul>';
+      $output .= '<li>' . t('Dropdown menus on hover for quick access to nested admin pages') . '</li>';
+      $output .= '<li>' . t('A Drupal icon dropdown with quick admin tools like "Flush all caches" and "Run cron"') . '</li>';
+      $output .= '</ul>';
+      $output .= '<p>' . t('This module works with any theme, including those that have customized the toolbar template.') . '</p>';
+      return $output;
+  }
+}
