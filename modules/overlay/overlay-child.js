@@ -128,6 +128,36 @@ Drupal.overlayChild.behaviors.parseForms = function (context, settings) {
 };
 
 /**
+ * Show loading indicator when forms are submitted.
+ *
+ * Provides visual feedback during form submission while waiting for the
+ * page to reload with the result.
+ */
+Drupal.overlayChild.behaviors.formSubmitLoading = function (context, settings) {
+  // Helper function to show the loading indicator in parent overlay.
+  var showLoading = function () {
+    try {
+      // Use native JavaScript to add class to parent document - more reliable.
+      if (parent && parent.document && parent.document.documentElement) {
+        parent.document.documentElement.classList.add('overlay-loading');
+      }
+    } catch (e) {
+      // Cross-origin or other error, ignore.
+    }
+  };
+
+  // Catch form submit events.
+  $('form', context).once('overlay-loading', function () {
+    $(this).bind('submit', showLoading);
+  });
+
+  // Also catch clicks on submit buttons for earlier visual feedback.
+  $('input[type="submit"], button[type="submit"]', context).once('overlay-loading-btn', function () {
+    $(this).bind('click', showLoading);
+  });
+};
+
+/**
  * Replace the overlay title with a message while loading another page.
  */
 Drupal.overlayChild.behaviors.loading = function (context, settings) {

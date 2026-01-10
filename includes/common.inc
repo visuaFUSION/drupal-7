@@ -752,6 +752,267 @@ function drupal_access_denied() {
 }
 
 /**
+ * Performs an HTTP request using cURL.
+ *
+ * This is a modernized implementation using PHP's cURL extension, which
+ * provides better SSL/TLS handling and Windows compatibility than the
+ * legacy socket-based approach.
+ *
+ * @param string $url
+ *   A string containing a fully qualified URI.
+ * @param array $options
+ *   An array of options. See drupal_http_request() for details.
+ *
+ * @return object
+ *   An object containing the response. See drupal_http_request() for details.
+ *
+ * @see drupal_http_request()
+ */
+function _drupal_http_request_curl($url, array $options = array()) {
+  $result = new stdClass();
+
+  // Parse the URL and make sure we can handle the schema.
+  $uri = @parse_url($url);
+
+  if ($uri == FALSE) {
+    $result->error = 'unable to parse URL';
+    $result->code = -1001;
+    return $result;
+  }
+
+  if (!isset($uri['scheme'])) {
+    $result->error = 'missing schema';
+    $result->code = -1002;
+    return $result;
+  }
+
+  if (!in_array($uri['scheme'], array('http', 'https', 'feed'))) {
+    $result->error = 'invalid schema ' . $uri['scheme'];
+    $result->code = -1003;
+    return $result;
+  }
+
+  timer_start(__FUNCTION__);
+
+  // Merge the default options.
+  $options += array(
+    'headers' => array(),
+    'method' => 'GET',
+    'data' => NULL,
+    'max_redirects' => 3,
+    'timeout' => 30.0,
+    'context' => NULL,
+  );
+
+  // Merge the default headers.
+  $options['headers'] += array(
+    'User-Agent' => 'Drupal (+http://drupal.org/)',
+  );
+
+  $options['timeout'] = (float) $options['timeout'];
+
+  // Convert array $options['data'] to query string.
+  if (is_array($options['data'])) {
+    $options['data'] = drupal_http_build_query($options['data']);
+  }
+
+  // If the server URL has a user then attempt to use basic authentication.
+  if (isset($uri['user'])) {
+    $options['headers']['Authorization'] = 'Basic ' . base64_encode($uri['user'] . (isset($uri['pass']) ? ':' . $uri['pass'] : ':'));
+  }
+
+  // If the database prefix is being used by SimpleTest to run the tests in a copied
+  // database then set the user-agent header to the database prefix so that any
+  // calls to other Drupal pages will run the SimpleTest prefixed database.
+  $test_info = &$GLOBALS['drupal_test_info'];
+  if (!empty($test_info['test_run_id'])) {
+    $options['headers']['User-Agent'] = drupal_generate_test_ua($test_info['test_run_id']);
+  }
+
+  // Initialize cURL.
+  $ch = curl_init();
+
+  // Set URL.
+  curl_setopt($ch, CURLOPT_URL, $url);
+
+  // Return the response as a string instead of outputting it.
+  curl_setopt($ch, CURLOPT_RETURNTRANSFER, TRUE);
+
+  // Include headers in the output.
+  curl_setopt($ch, CURLOPT_HEADER, TRUE);
+
+  // Set timeout.
+  curl_setopt($ch, CURLOPT_TIMEOUT, (int) ceil($options['timeout']));
+  curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, (int) ceil($options['timeout']));
+
+  // Set HTTP method.
+  curl_setopt($ch, CURLOPT_CUSTOMREQUEST, $options['method']);
+
+  // Handle redirects.
+  if ($options['max_redirects'] > 0) {
+    curl_setopt($ch, CURLOPT_FOLLOWLOCATION, TRUE);
+    curl_setopt($ch, CURLOPT_MAXREDIRS, $options['max_redirects']);
+  }
+  else {
+    curl_setopt($ch, CURLOPT_FOLLOWLOCATION, FALSE);
+  }
+
+  // Set request body for POST, PUT, etc.
+  if (!empty($options['data'])) {
+    curl_setopt($ch, CURLOPT_POSTFIELDS, $options['data']);
+  }
+
+  // Build headers array for cURL.
+  $curl_headers = array();
+  foreach ($options['headers'] as $name => $value) {
+    $curl_headers[] = $name . ': ' . trim($value);
+  }
+  if (!empty($curl_headers)) {
+    curl_setopt($ch, CURLOPT_HTTPHEADER, $curl_headers);
+  }
+
+  // SSL verification settings.
+  // For loopback/localhost connections, SSL verification often fails on Windows
+  // because the server can't verify its own certificate. Allow this to be
+  // configured or auto-detected.
+  $skip_ssl_verify = variable_get('drupal_http_request_skip_ssl_verify', NULL);
+  if ($skip_ssl_verify === NULL) {
+    // Auto-detect: skip SSL verification for localhost/loopback connections.
+    $host_lower = strtolower($uri['host']);
+    $is_loopback = ($host_lower === 'localhost'
+      || $host_lower === '127.0.0.1'
+      || $host_lower === '::1'
+      || $host_lower === gethostname()
+      || $host_lower === strtolower(php_uname('n'))
+      || (isset($_SERVER['SERVER_NAME']) && $host_lower === strtolower($_SERVER['SERVER_NAME']))
+      || (isset($_SERVER['HTTP_HOST']) && $host_lower === strtolower(preg_replace('/:\d+$/', '', $_SERVER['HTTP_HOST']))));
+    $skip_ssl_verify = $is_loopback;
+  }
+
+  if ($skip_ssl_verify) {
+    curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, FALSE);
+    curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, 0);
+  }
+  else {
+    curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, TRUE);
+    curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, 2);
+  }
+
+  // Use a proxy if one is defined and the host is not on the excluded list.
+  $proxy_server = variable_get('proxy_server', '');
+  if ($proxy_server && _drupal_http_use_proxy($uri['host'])) {
+    $proxy_port = variable_get('proxy_port', 8080);
+    curl_setopt($ch, CURLOPT_PROXY, $proxy_server);
+    curl_setopt($ch, CURLOPT_PROXYPORT, $proxy_port);
+
+    // Add proxy authentication if needed.
+    if ($proxy_username = variable_get('proxy_username', '')) {
+      $proxy_password = variable_get('proxy_password', '');
+      curl_setopt($ch, CURLOPT_PROXYUSERPWD, $proxy_username . ':' . $proxy_password);
+    }
+  }
+
+  // Build the request string for the result object (for debugging/logging).
+  $path = isset($uri['path']) ? $uri['path'] : '/';
+  if (isset($uri['query'])) {
+    $path .= '?' . $uri['query'];
+  }
+  $request = $options['method'] . ' ' . $path . " HTTP/1.1\r\n";
+  foreach ($options['headers'] as $name => $value) {
+    $request .= $name . ': ' . trim($value) . "\r\n";
+  }
+  $request .= "\r\n" . $options['data'];
+  $result->request = $request;
+
+  // Execute the request.
+  $response = curl_exec($ch);
+  $curl_error = curl_error($ch);
+  $curl_errno = curl_errno($ch);
+  $info = curl_getinfo($ch);
+
+  curl_close($ch);
+
+  // Handle cURL errors.
+  if ($curl_errno) {
+    $result->code = -$curl_errno;
+    $result->error = $curl_error;
+
+    // Check for timeout.
+    if ($curl_errno == CURLE_OPERATION_TIMEDOUT || $curl_errno == CURLE_OPERATION_TIMEOUTED) {
+      $result->code = HTTP_REQUEST_TIMEOUT;
+      $result->error = 'request timed out';
+    }
+
+    // Mark that this request failed.
+    variable_set('drupal_http_request_fails', TRUE);
+
+    return $result;
+  }
+
+  // Separate headers and body.
+  $header_size = $info['header_size'];
+  $response_headers = substr($response, 0, $header_size);
+  $result->data = substr($response, $header_size);
+
+  // Parse response headers.
+  $header_lines = preg_split("/\r\n|\n|\r/", $response_headers);
+  $result->headers = array();
+
+  // Get the last status line (in case of redirects, there are multiple).
+  $status_line = '';
+  foreach ($header_lines as $line) {
+    if (preg_match('/^HTTP\//', $line)) {
+      $status_line = $line;
+    }
+  }
+
+  // Parse the response status line.
+  $response_status_array = _drupal_parse_response_status(trim($status_line));
+  $result->protocol = $response_status_array['http_version'];
+  $result->status_message = $response_status_array['reason_phrase'];
+  $result->code = (int) $info['http_code'];
+
+  // Parse response headers (from the last set of headers after redirects).
+  $in_final_headers = FALSE;
+  foreach ($header_lines as $line) {
+    $line = trim($line);
+    if (empty($line)) {
+      continue;
+    }
+    if (preg_match('/^HTTP\//', $line)) {
+      // Start of a new header block, reset headers.
+      $result->headers = array();
+      $in_final_headers = TRUE;
+      continue;
+    }
+    if ($in_final_headers && strpos($line, ':') !== FALSE) {
+      list($name, $value) = explode(':', $line, 2);
+      $name = strtolower($name);
+      if (isset($result->headers[$name]) && $name == 'set-cookie') {
+        $result->headers[$name] .= ',' . trim($value);
+      }
+      else {
+        $result->headers[$name] = trim($value);
+      }
+    }
+  }
+
+  // Track redirect information.
+  if ($info['redirect_count'] > 0) {
+    $result->redirect_url = $info['url'];
+    // The redirect_code would be the original response code, but cURL doesn't
+    // easily expose this. We'll leave it unset in this case.
+  }
+
+  // Set error for non-2xx/3xx responses.
+  if ($result->code >= 400) {
+    $result->error = $result->status_message;
+  }
+
+  return $result;
+}
+
+/**
  * Performs an HTTP request.
  *
  * This is a flexible and powerful HTTP client implementation. Correctly
@@ -800,6 +1061,12 @@ function drupal_http_request($url, array $options = array()) {
   $override_function = variable_get('drupal_http_request_function', FALSE);
   if (!empty($override_function) && function_exists($override_function)) {
     return $override_function($url, $options);
+  }
+
+  // Use cURL if available (more reliable, especially on Windows/IIS).
+  // This can be disabled by setting drupal_http_request_use_curl to FALSE.
+  if (function_exists('curl_init') && variable_get('drupal_http_request_use_curl', TRUE)) {
+    return _drupal_http_request_curl($url, $options);
   }
 
   $result = new stdClass();

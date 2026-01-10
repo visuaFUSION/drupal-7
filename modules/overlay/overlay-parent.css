@@ -41,6 +41,72 @@ html.overlay-open .displace-bottom {
 }
 
 /**
+ * Loading indicator for overlay.
+ * Shows site logo and 5 dots with wave animation inside a modern card.
+ */
+#overlay-loading {
+  display: none;
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 502;
+  /* Modern flat card design - 1.7x size */
+  background: #fff;
+  border-radius: 16px;
+  padding: 40px 54px;
+  box-shadow: 0 6px 40px rgba(0, 0, 0, 0.18);
+}
+
+html.overlay-loading #overlay-loading {
+  display: block;
+}
+
+.overlay-loading-logo {
+  text-align: center;
+  margin-bottom: 24px;
+}
+
+.overlay-loading-logo img {
+  max-height: 60px;
+  max-width: 180px;
+  height: auto;
+  width: auto;
+}
+
+.overlay-loading-dots {
+  display: flex;
+  gap: 14px;
+  align-items: center;
+  justify-content: center;
+}
+
+.overlay-loading-dots span {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background-color: #ddd;
+  animation: overlay-dot-pulse 1.2s ease-in-out infinite;
+}
+
+.overlay-loading-dots span:nth-child(1) { animation-delay: 0s; }
+.overlay-loading-dots span:nth-child(2) { animation-delay: 0.1s; }
+.overlay-loading-dots span:nth-child(3) { animation-delay: 0.2s; }
+.overlay-loading-dots span:nth-child(4) { animation-delay: 0.3s; }
+.overlay-loading-dots span:nth-child(5) { animation-delay: 0.4s; }
+
+@keyframes overlay-dot-pulse {
+  0%, 60%, 100% {
+    background-color: #ddd;
+    transform: scale(1);
+  }
+  30% {
+    background-color: #0074bd;
+    transform: scale(1.15);
+  }
+}
+
+/**
  * Within the overlay parent, the message about disabling the overlay is for
  * screen-reader users only. It is always kept invisible with the
  * element-invisible class, and removed from the tab order. Overlay-child.css

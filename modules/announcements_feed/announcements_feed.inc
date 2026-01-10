@@ -48,15 +48,18 @@ function announcements_feed_get_all_announcements() {
   $announcements = announcements_feed_fetch();
   $announcements_feed = array();
   foreach ($announcements as $announcement) {
+    // Support both _drupalorg (drupal.org feeds) and _drupal (LTSR feeds).
+    $drupal_data = isset($announcement['_drupalorg']) ? $announcement['_drupalorg'] : (isset($announcement['_drupal']) ? $announcement['_drupal'] : array());
+
     $announcements_feed[] = array(
       'id' => $announcement['id'],
       'title' => $announcement['title'],
-      'link' => $announcement['url'],
+      'link' => isset($announcement['url']) ? $announcement['url'] : '',
       'date_modified' => $announcement['date_modified'],
       'date_published' => $announcement['date_published'],
       'teaser' => $announcement['content_html'],
-      'version' => $announcement['_drupalorg']['version'],
-      'featured' => (bool) $announcement['_drupalorg']['featured'],
+      'version' => isset($drupal_data['version']) ? $drupal_data['version'] : '',
+      'featured' => !empty($drupal_data['featured']),
     );
   }
 
@@ -135,8 +138,12 @@ function announcements_feed_fetch($force = FALSE) {
  * Sort the elements of announcements_feed by values in comparison function.
  */
 function announcements_feed_sort_featured($a, $b) {
-  $a_value = (int) $a['_drupalorg']['featured'];
-  $b_value = (int) $b['_drupalorg']['featured'];
+  // Support both _drupalorg (drupal.org feeds) and _drupal (LTSR feeds).
+  $a_data = isset($a['_drupalorg']) ? $a['_drupalorg'] : (isset($a['_drupal']) ? $a['_drupal'] : array());
+  $b_data = isset($b['_drupalorg']) ? $b['_drupalorg'] : (isset($b['_drupal']) ? $b['_drupal'] : array());
+
+  $a_value = !empty($a_data['featured']) ? 1 : 0;
+  $b_value = !empty($b_data['featured']) ? 1 : 0;
   if ($a_value == $b_value) {
     return 0;
   }
@@ -145,7 +152,7 @@ function announcements_feed_sort_featured($a, $b) {
 }
 
 /**
- * Filter the announcements relevant to the Drupal version used with valid URL controlled by drupal.org.
+ * Filter the announcements relevant to the Drupal version used with valid URL from trusted source.
  *
  * @param array $announcement
  *   Announcement feed array item to check.
@@ -159,11 +166,17 @@ function announcements_feed_filter_announcements($announcement) {
   if (!empty($announcement['url'])) {
     $announcement_url = $announcement['url'];
   }
-  if (!empty($announcement['_drupalorg']['version'])) {
-    $announcement_version = $announcement['_drupalorg']['version'];
+
+  // Support both _drupalorg (drupal.org feeds) and _drupal (LTSR feeds).
+  $drupal_data = isset($announcement['_drupalorg']) ? $announcement['_drupalorg'] : (isset($announcement['_drupal']) ? $announcement['_drupal'] : array());
+  if (!empty($drupal_data['version'])) {
+    $announcement_version = $drupal_data['version'];
   }
 
-  return announcements_feed_validate_url($announcement_url) && announcements_feed_is_relevant_item($announcement_version);
+  // If no URL is provided, still show the announcement (LTSR feeds may not have individual URLs).
+  $url_valid = empty($announcement_url) || announcements_feed_validate_url($announcement_url);
+
+  return $url_valid && announcements_feed_is_relevant_item($announcement_version);
 }
 
 /**
@@ -187,8 +200,8 @@ function announcements_feed_is_relevant_item($version) {
   $operations = '=';
   // Extracts major version from version string like 7, 8, 9.
   $p_major = '(?P<major>\d+)';
-  // Extracts minor version from version string.
-  $p_minor = '(?P<minor>(?:\d+|x)(?:-[A-Za-z]+\d+)?)';
+  // Extracts minor version from version string (supports formats like 2026, 2026.01, x, x-alpha1).
+  $p_minor = '(?P<minor>(?:\d+(?:\.\d+)*|x)(?:-[A-Za-z]+\d+)?)';
   foreach ($all_versions as $version) {
     if (preg_match("/^\s*$p_op\s*$p_major(\.$p_minor)?/", $version, $matches)) {
       $feed_version = $matches['major'];
@@ -211,21 +224,35 @@ function announcements_feed_is_relevant_item($version) {
 }
 
 /**
- * Check whether a link is controlled by drupal.org.
+ * Check whether a link is from a trusted source.
  *
  * @param string $url
  *   URL to check.
  *
  * @return bool
- *   Return TRUE if the URL is controlled by drupal.org.
+ *   Return TRUE if the URL is from a trusted source.
  */
 function announcements_feed_validate_url($url) {
   if (empty($url)) {
     return FALSE;
   }
   $host = parse_url($url, PHP_URL_HOST);
+  if (!$host) {
+    return FALSE;
+  }
 
   // First character can only be a letter or a digit.
   // @see https://www.rfc-editor.org/rfc/rfc1123#page-13
-  return $host && preg_match('/^([a-zA-Z0-9][a-zA-Z0-9\-_]*\.)?drupal\.org$/', $host);
+
+  // Allow drupal.org and subdomains.
+  if (preg_match('/^([a-zA-Z0-9][a-zA-Z0-9\-_]*\.)?drupal\.org$/', $host)) {
+    return TRUE;
+  }
+
+  // Allow github.com for LTSR announcements.
+  if (preg_match('/^([a-zA-Z0-9][a-zA-Z0-9\-_]*\.)?github\.com$/', $host)) {
+    return TRUE;
+  }
+
+  return FALSE;
 }

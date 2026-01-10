@@ -691,6 +691,13 @@ function overlay_overlay_parent_initialize() {
   drupal_add_js(array('overlay' => array('pathPrefixes' => $path_prefixes)), 'setting');
   // Pass along the Ajax callback for rerendering sections of the parent window.
   drupal_add_js(array('overlay' => array('ajaxCallback' => 'overlay-ajax')), 'setting');
+
+  // Pass the default theme's logo URL for the loading indicator.
+  $default_theme = variable_get('theme_default', 'bartik');
+  $logo = theme_get_setting('logo', $default_theme);
+  if ($logo) {
+    drupal_add_js(array('overlay' => array('logo' => $logo)), 'setting');
+  }
 }
 
 /**

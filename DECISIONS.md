@@ -185,6 +185,111 @@ This vulnerability describes a gadget chain (exploitable magic methods) that cou
 
 ---
 
+## HTTP Client Modernization
+
+### Decision: Use cURL for HTTP Requests When Available
+**Date:** January 2026
+**Decision Maker:** bahusafoo
+
+**Decision:** Modernize `drupal_http_request()` to use PHP's cURL extension when available, falling back to the legacy socket-based implementation if cURL is unavailable.
+
+**Rationale:**
+- cURL provides better SSL/TLS handling than raw PHP sockets
+- Significantly more reliable on Windows/IIS environments
+- Better handling of redirects, timeouts, and HTTP features
+- cURL is available in all modern PHP installations (required for many hosting environments)
+- Legacy socket implementation retained as fallback for edge cases
+
+**Implementation:**
+- New `_drupal_http_request_curl()` function in `includes/common.inc`
+- Auto-detects loopback connections (localhost, server hostname) and skips SSL verification for self-connections
+- Can be disabled via `$conf['drupal_http_request_use_curl'] = FALSE;`
+- SSL verification skip can be forced via `$conf['drupal_http_request_skip_ssl_verify'] = TRUE;`
+
+**Related Files:**
+- `includes/common.inc` - HTTP request functions
+
+---
+
+## UI/UX Modernization
+
+### Decision: Add Loading Indicator to Overlay Module
+**Date:** January 2026
+**Decision Maker:** bahusafoo
+
+**Decision:** Add a modern loading indicator to the overlay module that displays during page loads and form submissions, featuring the site's logo and an animated dot wave effect.
+
+**Rationale:**
+- Drupal 7's overlay previously had no visual loading feedback
+- Users clicking admin links would see a dimmed screen with no indication of progress
+- Modern web applications provide clear loading states for better UX
+- Branded loading screen (with site logo) provides professional feel
+
+**Implementation:**
+- 5-dot wave animation with staggered pulse effect
+- Site logo displayed above dots (pulled from default theme settings)
+- Modern card design with rounded corners and shadow
+- Shows immediately when overlay opens or forms are submitted
+- jQuery 1.4.4 compatible (uses `.bind()` instead of `.on()`)
+
+**Design Details:**
+- Card: white background, 16px border radius, subtle shadow
+- Dots: 18px diameter, gray → Drupal blue pulse animation
+- Logo: max 60px height, 180px width, centered above dots
+
+**Related Files:**
+- `modules/overlay/overlay-parent.js` - Theme function and loading state
+- `modules/overlay/overlay-parent.css` - Loading indicator styles
+- `modules/overlay/overlay-child.js` - Form submission loading trigger
+- `modules/overlay/overlay.module` - Logo URL passed to JavaScript
+
+---
+
+### Decision: Favicon Fallback for Admin Theme
+**Date:** January 2026
+**Decision Maker:** bahusafoo
+
+**Decision:** When the admin theme doesn't have a favicon configured, fall back to the default theme's favicon instead of showing no favicon.
+
+**Rationale:**
+- Admin overlay would show browser default favicon (globe) when admin theme had no favicon
+- Inconsistent branding experience between front-end and admin
+- Simple fix that improves visual consistency
+
+**Implementation:**
+- Modified `template_preprocess_html()` and `template_preprocess_maintenance_page()` in `includes/theme.inc`
+- Checks current theme for favicon; if empty, falls back to default theme's favicon
+
+**Related Files:**
+- `includes/theme.inc` - Theme preprocessing functions
+
+---
+
+## Announcements System
+
+### Decision: Support LTSR Feed Format in Announcements Module
+**Date:** January 2026
+**Decision Maker:** bahusafoo
+
+**Decision:** Modify the announcements_feed module to support both drupal.org's feed format (`_drupalorg` property) and LTSR's feed format (`_drupal` property), and allow GitHub URLs in addition to drupal.org URLs.
+
+**Rationale:**
+- LTSR announcements are hosted on GitHub, not drupal.org
+- Original module only allowed drupal.org URLs
+- Feed property naming differs between D.O. and LTSR formats
+- Version matching regex needed to support LTSR version format (7.2026.01)
+
+**Implementation:**
+- `announcements_feed_validate_url()` now accepts github.com URLs
+- Property checking supports both `_drupalorg` and `_drupal`
+- Version regex updated to handle `YYYY.MM` format
+- Missing URL field handled gracefully (LTSR feeds may not have individual URLs)
+
+**Related Files:**
+- `modules/announcements_feed/announcements_feed.inc` - Feed parsing and validation
+
+---
+
 ## Contributing
 
 When making significant decisions about the direction of this project, please:

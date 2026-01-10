@@ -101,6 +101,9 @@ Drupal.overlay.create = function () {
   this.$container = $(Drupal.theme('overlayContainer'))
     .appendTo(document.body);
 
+  // Show loading indicator immediately when overlay is created.
+  $(document.documentElement).addClass('overlay-loading');
+
   // Overlay uses transparent iframes that cover the full parent window.
   // When the overlay is open the scrollbar of the parent window is hidden.
   // Because some browsers show a white iframe background for a short moment
@@ -1028,7 +1031,19 @@ Drupal.overlay._restoreTabindex = function () {
  * Theme function to create the overlay iframe element.
  */
 Drupal.theme.prototype.overlayContainer = function () {
-  return '<div id="overlay-container"><div class="overlay-modal-background"></div></div>';
+  var logo = '';
+  if (Drupal.settings.overlay && Drupal.settings.overlay.logo) {
+    logo = '<div class="overlay-loading-logo"><img src="' + Drupal.settings.overlay.logo + '" alt="" /></div>';
+  }
+  return '<div id="overlay-container">' +
+    '<div class="overlay-modal-background"></div>' +
+    '<div id="overlay-loading">' +
+      logo +
+      '<div class="overlay-loading-dots">' +
+        '<span></span><span></span><span></span><span></span><span></span>' +
+      '</div>' +
+    '</div>' +
+  '</div>';
 };
 
 /**

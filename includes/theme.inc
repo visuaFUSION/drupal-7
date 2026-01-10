@@ -2629,9 +2629,28 @@ function template_preprocess_html(&$variables) {
   $variables['language']->dir     = $GLOBALS['language']->direction ? 'rtl' : 'ltr';
 
   // Add favicon.
+  // If the current theme doesn't have a favicon, fall back to the default
+  // theme's favicon. This is especially useful in the admin overlay where
+  // the admin theme may not have a favicon configured.
+  $favicon = NULL;
+  $type = NULL;
   if (theme_get_setting('toggle_favicon')) {
     $favicon = theme_get_setting('favicon');
     $type = theme_get_setting('favicon_mimetype');
+  }
+  // Fall back to the default theme's favicon if current theme doesn't have one.
+  if (empty($favicon)) {
+    $default_theme = variable_get('theme_default', 'bartik');
+    global $theme_key;
+    if ($theme_key !== $default_theme) {
+      $default_favicon_enabled = theme_get_setting('toggle_favicon', $default_theme);
+      if ($default_favicon_enabled) {
+        $favicon = theme_get_setting('favicon', $default_theme);
+        $type = theme_get_setting('favicon_mimetype', $default_theme);
+      }
+    }
+  }
+  if (!empty($favicon)) {
     drupal_add_html_head_link(array('rel' => 'shortcut icon', 'href' => drupal_strip_dangerous_protocols($favicon), 'type' => $type));
   }
 
@@ -2855,10 +2874,26 @@ function theme_get_suggestions($args, $base, $delimiter = '__') {
  * @see maintenance-page.tpl.php
  */
 function template_preprocess_maintenance_page(&$variables) {
-  // Add favicon
+  // Add favicon.
+  // Fall back to the default theme's favicon if current theme doesn't have one.
+  $favicon = NULL;
+  $type = NULL;
   if (theme_get_setting('toggle_favicon')) {
     $favicon = theme_get_setting('favicon');
     $type = theme_get_setting('favicon_mimetype');
+  }
+  if (empty($favicon)) {
+    $default_theme = variable_get('theme_default', 'bartik');
+    global $theme_key;
+    if ($theme_key !== $default_theme) {
+      $default_favicon_enabled = theme_get_setting('toggle_favicon', $default_theme);
+      if ($default_favicon_enabled) {
+        $favicon = theme_get_setting('favicon', $default_theme);
+        $type = theme_get_setting('favicon_mimetype', $default_theme);
+      }
+    }
+  }
+  if (!empty($favicon)) {
     drupal_add_html_head_link(array('rel' => 'shortcut icon', 'href' => drupal_strip_dangerous_protocols($favicon), 'type' => $type));
   }
 
