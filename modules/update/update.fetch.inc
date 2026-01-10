@@ -332,6 +332,36 @@ function _update_build_fetch_url($project, $site_key = '') {
  * @see _update_build_fetch_url()
  */
 function _update_get_fetch_url_base($project) {
+  // LTSR-maintained modules should always use the LTSR update server,
+  // regardless of what's in their .info file.
+  static $ltsr_modules = array(
+    'analytics',
+    'auto_nodetitle',
+    'calendar',
+    'content_access',
+    'ctools',
+    'date',
+    'ds',
+    'entity',
+    'ldap',
+    'libraries',
+    'panels',
+    'permissions_per_webform',
+    'smart_trim',
+    'timefield',
+    'token',
+    'video',
+    'views',
+    'webform',
+    'webserver_auth',
+    'wysiwyg',
+  );
+
+  $project_name = isset($project['name']) ? $project['name'] : '';
+  if (in_array($project_name, $ltsr_modules)) {
+    return UPDATE_DEFAULT_URL;
+  }
+
   return isset($project['info']['project status url']) ? $project['info']['project status url'] : variable_get('update_fetch_url', UPDATE_DEFAULT_URL);
 }
 
