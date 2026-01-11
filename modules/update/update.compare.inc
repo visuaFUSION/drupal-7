@@ -609,6 +609,42 @@ function update_calculate_project_update_status($unused, &$project_data, $availa
   $suppress_eol = defined('DRUPAL_FORK_SUPPRESS_EOL_WARNINGS') && DRUPAL_FORK_SUPPRESS_EOL_WARNINGS;
   $is_core = isset($project_data['name']) && $project_data['name'] === 'drupal';
 
+  // Check if the installed version is newer than any available release.
+  // This can happen when running a custom/development version that hasn't
+  // been publicly released yet.
+  $existing_version = $project_data['existing_version'];
+  $version_keys = array_keys($available['releases']);
+  $latest_available = reset($version_keys);
+  if (!isset($available['releases'][$existing_version])) {
+    // The installed version is not in the available releases list.
+    // Check if it's newer than the latest available release.
+    // Strip the "7.x-" prefix if present for comparison.
+    $existing_comparable = preg_replace('/^\d+\.x-/', '', $existing_version);
+    $latest_comparable = preg_replace('/^\d+\.x-/', '', $latest_available);
+
+    // Use version_compare to determine if installed is newer.
+    // If installed version is greater than latest available, mark as ahead.
+    if (version_compare($existing_comparable, $latest_comparable, '>')) {
+      $project_data['status'] = UPDATE_AHEAD;
+      $project_data['reason'] = t('Newer than published releases');
+      // Still record the latest available for reference.
+      if (isset($available['releases'][$latest_available])) {
+        $project_data['latest_version'] = $latest_available;
+        $project_data['releases'][$latest_available] = $available['releases'][$latest_available];
+        $project_data['recommended'] = $latest_available;
+      }
+      if (empty($project_data['extra'])) {
+        $project_data['extra'] = array();
+      }
+      $project_data['extra'][] = array(
+        'class' => array('version-ahead'),
+        'label' => t('Development version'),
+        'data' => t('You are running a version newer than any publicly available release.'),
+      );
+      return;
+    }
+  }
+
   foreach ($available['releases'] as $version => $release) {
     // First, if this is the existing release, check a few conditions.
     if ($project_data['existing_version'] === $version) {

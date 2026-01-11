@@ -123,7 +123,7 @@ function _update_requirement_check($project, $type) {
     $requirement['title'] = t('Module and theme update status');
   }
   $status = $project['status'];
-  if ($status != UPDATE_CURRENT) {
+  if ($status != UPDATE_CURRENT && $status != UPDATE_AHEAD) {
     $requirement['reason'] = $status;
     $requirement['description'] = _update_message_text($type, $status, TRUE);
     $requirement['severity'] = REQUIREMENT_ERROR;
@@ -149,10 +149,14 @@ function _update_requirement_check($project, $type) {
       $requirement_label = isset($project['reason']) ? $project['reason'] : t('Can not determine status');
       $requirement['severity'] = REQUIREMENT_WARNING;
       break;
+    case UPDATE_AHEAD:
+      $requirement_label = t('Up to date');
+      $requirement['severity'] = REQUIREMENT_INFO;
+      break;
     default:
       $requirement_label = t('Up to date');
   }
-  if ($status != UPDATE_CURRENT && $type == 'core' && isset($project['recommended'])) {
+  if ($status != UPDATE_CURRENT && $status != UPDATE_AHEAD && $type == 'core' && isset($project['recommended'])) {
     $requirement_label .= ' ' . t('(version @version available)', array('@version' => $project['recommended']));
   }
   $requirement['value'] = l($requirement_label, update_manager_access() ? 'admin/reports/updates/update' : 'admin/reports/updates');

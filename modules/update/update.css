@@ -60,6 +60,19 @@
   background: #ffe;
 }
 
+.update tr.info {
+  background: #def;
+}
+
+.update tr.info .version-recommended {
+  background: #cef;
+}
+
+.update .version-ahead {
+  font-weight: bold;
+  color: #0074bd;
+}
+
 .current-version,
 .new-version {
   direction: ltr; /* Note: version numbers should always be LTR. */

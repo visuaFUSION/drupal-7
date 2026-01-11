@@ -1,0 +1,8 @@
+name = About Drupal 7 LTSR
+description = Provides information about the Drupal 7 Long Term Support Release (LTSR) maintained by visuaFUSION.
+package = Core
+core = 7.x
+version = 7.x-2026.03
+
+; This module is always enabled and cannot be disabled
+required = TRUE

@@ -16,7 +16,7 @@ function file_help($path, $arg) {
     case 'admin/help#file':
       $output = '';
       $output .= '<h3>' . t('About') . '</h3>';
-      $output .= '<p>' . t('The File module defines a <em>File</em> field type for the Field module, which lets you manage and validate uploaded files attached to content on your site (see the <a href="@field-help">Field module help page</a> for more information about fields). For more information, see the online handbook entry for <a href="@file">File module</a>.', array('@field-help' => url('admin/help/field'), '@file' => 'http://drupal.org/documentation/modules/file')) . '</p>';
+      $output .= '<p>' . t('The File module defines a <em>File</em> field type for the Field module, which lets you manage and validate uploaded files attached to content on your site (see the <a href="@field-help">Field module help page</a> for more information about fields). For more information, see the <a href="@docs">Drupal 7 LTSR documentation</a>. (Historical: <a href="@historical">drupal.org</a>)', array('@field-help' => url('admin/help/field'), '@docs' => 'https://github.com/visuaFUSION/drupal-7/wiki/File-Module', '@historical' => 'http://drupal.org/documentation/modules/file')) . '</p>';
       $output .= '<h3>' . t('Uses') . '</h3>';
       $output .= '<dl>';
       $output .= '<dt>' . t('Attaching files to content') . '</dt>';
@@ -329,6 +329,23 @@ function file_ajax_progress($key) {
       $progress['percentage'] = round(100 * $status['current'] / $status['total']);
     }
   }
+  elseif ($implementation == 'session') {
+    // PHP native session upload progress (PHP 5.4+).
+    // The key is stored in $_SESSION with the configured prefix.
+    $session_key = ini_get('session.upload_progress.prefix') . $key;
+    if (isset($_SESSION[$session_key])) {
+      $status = $_SESSION[$session_key];
+      if (isset($status['bytes_processed']) && !empty($status['content_length'])) {
+        $progress['message'] = t('Uploading... (@current of @total)', array('@current' => format_size($status['bytes_processed']), '@total' => format_size($status['content_length'])));
+        $progress['percentage'] = round(100 * $status['bytes_processed'] / $status['content_length']);
+      }
+      // Check if upload is complete.
+      if (!empty($status['done'])) {
+        $progress['message'] = t('Upload complete');
+        $progress['percentage'] = 100;
+      }
+    }
+  }
 
   drupal_json_output($progress);
 }
@@ -337,8 +354,8 @@ function file_ajax_progress($key) {
  * Determines the preferred upload progress implementation.
  *
  * @return
- *   A string indicating which upload progress system is available. Either "apc"
- *   or "uploadprogress". If neither are available, returns FALSE.
+ *   A string indicating which upload progress system is available. Either "apc",
+ *   "uploadprogress", or "session". If none are available, returns FALSE.
  */
 function file_progress_implementation() {
   static $implementation;
@@ -352,6 +369,12 @@ function file_progress_implementation() {
     }
     elseif (extension_loaded('apc') && ini_get('apc.rfc1867')) {
       $implementation = 'apc';
+    }
+    // PHP 5.4+ has native session-based upload progress tracking.
+    // This works on any web server (Apache, Nginx, IIS, etc.) as long as
+    // sessions are enabled. Check this last as it's the fallback option.
+    elseif (version_compare(PHP_VERSION, '5.4.0', '>=') && ini_get('session.upload_progress.enabled')) {
+      $implementation = 'session';
     }
   }
   return $implementation;
@@ -440,8 +463,23 @@ function file_managed_file_process($element, &$form_state, $form) {
         '#type' => 'hidden',
         '#value' => $upload_progress_key,
         '#attributes' => array('class' => array('file-progress')),
-        // Uploadprogress extension requires this field to be at the top of the
-        // form.
+        // APC extension requires this field to be at the top of the form.
+        '#weight' => -20,
+      );
+    }
+    elseif ($implementation == 'session') {
+      // PHP native session upload progress (PHP 5.4+).
+      // The field name must match the session.upload_progress.name INI setting
+      // (defaults to PHP_SESSION_UPLOAD_PROGRESS).
+      $session_progress_name = ini_get('session.upload_progress.name');
+      if (empty($session_progress_name)) {
+        $session_progress_name = 'PHP_SESSION_UPLOAD_PROGRESS';
+      }
+      $element[$session_progress_name] = array(
+        '#type' => 'hidden',
+        '#value' => $upload_progress_key,
+        '#attributes' => array('class' => array('file-progress')),
+        // Must be at the top of the form before the file input.
         '#weight' => -20,
       );
     }

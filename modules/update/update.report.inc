@@ -61,6 +61,10 @@ function theme_update_report($variables) {
         $class = 'ok';
         $icon = theme('image', array('path' => 'misc/watchdog-ok.png', 'width' => 18, 'height' => 18, 'alt' => t('ok'), 'title' => t('ok')));
         break;
+      case UPDATE_AHEAD:
+        $class = 'info';
+        $icon = theme('image', array('path' => 'misc/message-16-info.png', 'width' => 16, 'height' => 16, 'alt' => t('info'), 'title' => t('info')));
+        break;
       case UPDATE_UNKNOWN:
       case UPDATE_FETCH_PENDING:
       case UPDATE_NOT_FETCHED:
@@ -281,6 +285,9 @@ function theme_update_status_label($variables) {
 
     case UPDATE_CURRENT:
       return '<span class="current">' . t('Up to date') . '</span>';
+
+    case UPDATE_AHEAD:
+      return '<span class="version-ahead">' . t('Newer than published') . '</span>';
 
     case UPDATE_NOT_TRACKED_LTSR:
       return '<span class="not-tracked-ltsr">' . t('Not tracked by LTSR') . '</span>';

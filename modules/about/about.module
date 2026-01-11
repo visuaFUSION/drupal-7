@@ -1,0 +1,78 @@
+<?php
+
+/**
+ * @file
+ * Provides information about Drupal 7 LTSR.
+ */
+
+/**
+ * Implements hook_help().
+ */
+function about_help($path, $arg) {
+  switch ($path) {
+    case 'admin/help#about':
+      return _about_ltsr_page();
+  }
+}
+
+/**
+ * Returns the About Drupal 7 LTSR page content.
+ */
+function _about_ltsr_page() {
+  $output = '';
+
+  // Header
+  $output .= '<h3>' . t('About Drupal 7 LTSR') . '</h3>';
+  $output .= '<p>' . t('Drupal 7 LTSR (Long Term Support Release) is a community-maintained fork of Drupal 7, continuing development and security updates after the official end-of-life of Drupal 7 by the Drupal Association.') . '</p>';
+
+  // Version info
+  $output .= '<h4>' . t('Current Version') . '</h4>';
+  $output .= '<p>' . t('You are running <strong>Drupal @version</strong>', array('@version' => VERSION)) . '</p>';
+
+  // Maintainer
+  $output .= '<h4>' . t('Maintained By') . '</h4>';
+  $output .= '<p>' . t('Drupal 7 LTSR is maintained by <a href="@visuafusion">visuaFUSION Systems Solutions</a>.', array('@visuafusion' => 'https://visuafusion.com')) . '</p>';
+
+  // Repositories
+  $output .= '<h4>' . t('Repositories') . '</h4>';
+  $output .= '<dl>';
+  $output .= '<dt><strong>' . t('Drupal 7 LTSR Core') . '</strong></dt>';
+  $output .= '<dd>' . t('<a href="@repo">github.com/visuaFUSION/drupal-7</a> - The core Drupal 7 LTSR distribution.', array('@repo' => 'https://github.com/visuaFUSION/drupal-7')) . '</dd>';
+  $output .= '<dt><strong>' . t('LTSR Modules') . '</strong></dt>';
+  $output .= '<dd>' . t('<a href="@repo">github.com/visuaFUSION/drupal-7-modules</a> - Maintained modules for Drupal 7 LTSR.', array('@repo' => 'https://github.com/visuaFUSION/drupal-7-modules')) . '</dd>';
+  $output .= '<dt><strong>' . t('LTSR Themes') . '</strong></dt>';
+  $output .= '<dd>' . t('<a href="@repo">github.com/visuaFUSION/drupal-7-themes</a> - Maintained themes for Drupal 7 LTSR.', array('@repo' => 'https://github.com/visuaFUSION/drupal-7-themes')) . '</dd>';
+  $output .= '</dl>';
+
+  // Documentation
+  $output .= '<h4>' . t('Documentation') . '</h4>';
+  $output .= '<dl>';
+  $output .= '<dt><strong>' . t('Core Documentation') . '</strong></dt>';
+  $output .= '<dd>' . t('<a href="@wiki">Drupal 7 LTSR Wiki</a> - Documentation for Drupal 7 LTSR core.', array('@wiki' => 'https://github.com/visuaFUSION/drupal-7/wiki')) . '</dd>';
+  $output .= '<dt><strong>' . t('Module Documentation') . '</strong></dt>';
+  $output .= '<dd>' . t('<a href="@wiki">Modules Wiki</a> - Documentation for LTSR-maintained modules.', array('@wiki' => 'https://github.com/visuaFUSION/drupal-7-modules/wiki')) . '</dd>';
+  $output .= '</dl>';
+
+  // Support & Community
+  $output .= '<h4>' . t('Support & Community') . '</h4>';
+  $output .= '<dl>';
+  $output .= '<dt><strong>' . t('Community Discussions') . '</strong></dt>';
+  $output .= '<dd>' . t('<a href="@discussions">GitHub Discussions</a> - Ask questions, share ideas, and connect with other Drupal 7 LTSR users.', array('@discussions' => 'https://github.com/visuaFUSION/drupal-7/discussions')) . '</dd>';
+  $output .= '<dt><strong>' . t('Report Core Issues') . '</strong></dt>';
+  $output .= '<dd>' . t('<a href="@issues">Core Issue Tracker</a> - Report bugs or request features for Drupal 7 LTSR core.', array('@issues' => 'https://github.com/visuaFUSION/drupal-7/issues')) . '</dd>';
+  $output .= '<dt><strong>' . t('Report Module Issues') . '</strong></dt>';
+  $output .= '<dd>' . t('<a href="@issues">Modules Issue Tracker</a> - Report bugs or request features for LTSR-maintained modules.', array('@issues' => 'https://github.com/visuaFUSION/drupal-7-modules/issues')) . '</dd>';
+  $output .= '<dt><strong>' . t('Paid Support') . '</strong></dt>';
+  $output .= '<dd>' . t('For professional support, consulting, or custom development, visit <a href="@visuafusion">visuaFUSION</a>.', array('@visuafusion' => 'https://visuafusion.com')) . '</dd>';
+  $output .= '</dl>';
+
+  // Historical reference
+  $output .= '<h4>' . t('Historical Reference') . '</h4>';
+  $output .= '<p>' . t('Drupal 7 was originally developed by the Drupal community and released in 2011. The original documentation and community resources remain available at <a href="@drupal">drupal.org</a> for historical reference, though they are no longer actively maintained for Drupal 7.', array('@drupal' => 'https://www.drupal.org/docs/7')) . '</p>';
+
+  // Credits
+  $output .= '<h4>' . t('Credits') . '</h4>';
+  $output .= '<p>' . t('Drupal 7 LTSR builds upon the work of thousands of contributors to the original Drupal project. We extend our gratitude to the Drupal community for creating such a robust and flexible content management system.') . '</p>';
+
+  return $output;
+}

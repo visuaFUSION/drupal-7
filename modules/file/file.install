@@ -55,27 +55,79 @@ function file_requirements($phase) {
   if ($phase == 'runtime') {
     $description = NULL;
     $implementation = file_progress_implementation();
+
     // Test the web server identity.
     $server_software = $_SERVER['SERVER_SOFTWARE'];
     if (preg_match("/Nginx/i", $server_software)) {
       $is_nginx = TRUE;
       $is_apache = FALSE;
+      $is_iis = FALSE;
       $fastcgi = FALSE;
     }
     elseif (preg_match("/Apache/i", $server_software)) {
       $is_nginx = FALSE;
       $is_apache = TRUE;
+      $is_iis = FALSE;
       $fastcgi = strpos($server_software, 'mod_fastcgi') !== FALSE || strpos($server_software, 'mod_fcgi') !== FALSE;
+    }
+    elseif (preg_match("/Microsoft-IIS/i", $server_software)) {
+      $is_nginx = FALSE;
+      $is_apache = FALSE;
+      $is_iis = TRUE;
+      $fastcgi = FALSE;
     }
     else {
       $is_nginx = FALSE;
       $is_apache = FALSE;
+      $is_iis = FALSE;
       $fastcgi = FALSE;
     }
 
-    if (!$is_apache && !$is_nginx) {
+    // Check for PHP native session upload progress capability (PHP 5.4+).
+    $php_session_upload_capable = version_compare(PHP_VERSION, '5.4.0', '>=') && ini_get('session.upload_progress.enabled');
+
+    // Determine the status message based on implementation and server.
+    if ($implementation == 'uploadprogress') {
+      $value = t('Enabled (<a href="http://pecl.php.net/package/uploadprogress">PECL uploadprogress</a>)');
+      $severity = REQUIREMENT_OK;
+    }
+    elseif ($implementation == 'apc') {
+      $value = t('Enabled (<a href="http://php.net/manual/en/apc.configuration.php#ini.apc.rfc1867">APC RFC1867</a>)');
+      $description = t('Your server is capable of displaying file upload progress using APC RFC1867. Note that only one upload at a time is supported. It is recommended to use the <a href="http://pecl.php.net/package/uploadprogress">PECL uploadprogress library</a> if possible.');
+      $severity = REQUIREMENT_OK;
+    }
+    elseif ($implementation == 'session') {
+      $value = t('Enabled (PHP native session upload progress)');
+      $description = t('Your server is using PHP\'s native session-based upload progress tracking. For better performance with multiple simultaneous uploads, consider installing the <a href="http://pecl.php.net/package/uploadprogress">PECL uploadprogress library</a>.');
+      $severity = REQUIREMENT_OK;
+    }
+    elseif ($php_session_upload_capable) {
+      // PHP native session upload is available but not being used (shouldn't happen
+      // normally, but handle it gracefully).
+      $value = t('Available (PHP native session upload progress)');
+      $description = t('PHP native session upload progress is available and can be enabled.');
+      $severity = REQUIREMENT_OK;
+    }
+    elseif ($is_iis) {
+      // IIS without any upload progress implementation.
       $value = t('Not enabled');
-      $description = t('Your server is not capable of displaying file upload progress. File upload progress requires an Apache server running PHP with mod_php or Nginx with PHP-FPM.');
+      if (version_compare(PHP_VERSION, '5.4.0', '>=')) {
+        $description = t('Your IIS server could support file upload progress using PHP\'s native session upload progress, but it is not enabled. Add <code>session.upload_progress.enabled = 1</code> to your php.ini configuration.');
+      }
+      else {
+        $description = t('Your IIS server is not capable of displaying file upload progress. Upgrade to PHP 5.4 or later to enable native session-based upload progress.');
+      }
+      $severity = REQUIREMENT_INFO;
+    }
+    elseif (!$is_apache && !$is_nginx) {
+      // Unknown server without any upload progress implementation.
+      $value = t('Not enabled');
+      if (version_compare(PHP_VERSION, '5.4.0', '>=')) {
+        $description = t('File upload progress is not enabled. You can enable PHP\'s native session upload progress by adding <code>session.upload_progress.enabled = 1</code> to your php.ini configuration, or install the <a href="http://pecl.php.net/package/uploadprogress">PECL uploadprogress library</a>.');
+      }
+      else {
+        $description = t('Your server is not capable of displaying file upload progress. File upload progress requires an Apache server running PHP with mod_php, Nginx with PHP-FPM, or PHP 5.4+ with session upload progress enabled.');
+      }
       $severity = REQUIREMENT_INFO;
     }
     elseif ($fastcgi) {
@@ -88,20 +140,12 @@ function file_requirements($phase) {
       $description = t('Your server is capable of displaying file upload progress through APC, but it is not enabled. Add <code>apc.rfc1867 = 1</code> to your php.ini configuration. Alternatively, it is recommended to use <a href="http://pecl.php.net/package/uploadprogress">PECL uploadprogress</a>, which supports more than one simultaneous upload.');
       $severity = REQUIREMENT_INFO;
     }
-    elseif (!$implementation) {
+    else {
       $value = t('Not enabled');
       $description = t('Your server is capable of displaying file upload progress, but does not have the required libraries. It is recommended to install the <a href="http://pecl.php.net/package/uploadprogress">PECL uploadprogress library</a> (preferred) or to install <a href="http://us2.php.net/apc">APC</a>.');
       $severity = REQUIREMENT_INFO;
     }
-    elseif ($implementation == 'apc') {
-      $value = t('Enabled (<a href="http://php.net/manual/en/apc.configuration.php#ini.apc.rfc1867">APC RFC1867</a>)');
-      $description = t('Your server is capable of displaying file upload progress using APC RFC1867. Note that only one upload at a time is supported. It is recommended to use the <a href="http://pecl.php.net/package/uploadprogress">PECL uploadprogress library</a> if possible.');
-      $severity = REQUIREMENT_OK;
-    }
-    elseif ($implementation == 'uploadprogress') {
-      $value = t('Enabled (<a href="http://pecl.php.net/package/uploadprogress">PECL uploadprogress</a>)');
-      $severity = REQUIREMENT_OK;
-    }
+
     $requirements['file_progress'] = array(
       'title' => t('Upload progress'),
       'value' => $value,
